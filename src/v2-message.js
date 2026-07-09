@@ -6,116 +6,82 @@ const {
   SeparatorBuilder,
   TextDisplayBuilder,
 } = require("discord.js");
-const { DEFAULT_EMBED_COLOR } = require("./constants");
+const { DEFAULT_COLOR } = require("./constants");
 
-const MAX_TEXT_DISPLAY = 4000;
+const MAX_TEXT = 4000;
 
-function truncateV2Text(text, maxLength = MAX_TEXT_DISPLAY) {
-  const value = String(text ?? "").trim();
-  if (!value) return "";
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength - 3)}...`;
-}
-
-function addTextToContainer(container, text) {
+function addText(container, text) {
   const normalized = String(text ?? "").trim();
   if (!normalized) return;
-
   let remaining = normalized;
   while (remaining.length > 0) {
-    const chunk = remaining.slice(0, MAX_TEXT_DISPLAY);
-    remaining = remaining.slice(MAX_TEXT_DISPLAY);
+    const chunk = remaining.slice(0, MAX_TEXT);
+    remaining = remaining.slice(MAX_TEXT);
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(chunk));
   }
 }
 
-function buildV2Container(options = {}) {
-  const {
-    content,
-    accentColor = DEFAULT_EMBED_COLOR,
-    imageUrls = [],
-    attachmentFilenames = [],
-    actionRows = [],
-    sections = [],
-    separators = [],
-  } = options;
+function buildV2FromDraft(draft) {
+  const container = new ContainerBuilder().setAccentColor(draft.accentColor ?? draft.color ?? DEFAULT_COLOR);
 
-  const container = new ContainerBuilder().setAccentColor(accentColor);
-  const files = options.files ?? [];
+  const parts = [];
+  if (draft.title) parts.push(`## ${draft.title}`);
+  if (draft.description) parts.push(draft.description);
 
-  for (const filename of attachmentFilenames) {
-    container.addMediaGalleryComponents(
-      new MediaGalleryBuilder().addItems(
-        new MediaGalleryItemBuilder().setURL(`attachment://${filename}`),
-      ),
-    );
+  if (draft.fields?.length) {
+    for (const field of draft.fields) {
+      parts.push(`**${field.name}**\n${field.value}`);
+    }
   }
 
-  for (const url of imageUrls) {
+  if (draft.footer) parts.push(`— *${draft.footer}*`);
+
+  addText(container, parts.join("\n\n"));
+
+  for (const section of draft.sections ?? []) {
+    if (!section.content) continue;
+    const { SectionBuilder, ThumbnailBuilder } = require("discord.js");
+    const sec = new SectionBuilder().addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(section.content),
+    );
+    if (section.thumbnailUrl) {
+      sec.setThumbnailAccessory(
+        new ThumbnailBuilder().setURL(section.thumbnailUrl).setDescription(section.content.slice(0, 80)),
+      );
+    }
+    container.addSectionComponents(sec);
+  }
+
+  for (const url of draft.imageUrls ?? []) {
     if (!url) continue;
     container.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(url)),
     );
   }
 
-  if (content) {
-    addTextToContainer(container, content);
+  if (draft.thumbnail && !draft.imageUrls?.length) {
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(draft.thumbnail)),
+    );
   }
-
-  for (const section of sections) {
-    container.addSectionComponents(section);
-  }
-
-  for (const separator of separators) {
-    container.addSeparatorComponents(separator);
-  }
-
-  if (actionRows.length > 0) {
+  if (draft.image) {
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-    for (const row of actionRows) {
-      container.addActionRowComponents(row);
-    }
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(draft.image)),
+    );
   }
 
-  return { container, files };
+  return container;
 }
 
-function buildV2Payload(options = {}) {
-  const { container, files = [] } = options.container
-    ? { container: options.container, files: options.files ?? [] }
-    : buildV2Container(options);
-
-  const { ephemeral = false, allowedMentions, includeFiles = true } = options;
-
+function buildV2Payload(draft, { ephemeral = false } = {}) {
   let flags = MessageFlags.IsComponentsV2;
-  if (ephemeral) {
-    flags |= MessageFlags.Ephemeral;
-  }
-
-  const payload = {
-    flags,
-    components: [container],
-  };
-
-  if (includeFiles && files.length > 0) {
-    payload.files = files;
-  }
-  if (allowedMentions) {
-    payload.allowedMentions = allowedMentions;
-  }
-
-  return payload;
+  if (ephemeral) flags |= MessageFlags.Ephemeral;
+  return { flags, components: [buildV2FromDraft(draft)] };
 }
 
-function buildV2EditPayload(options = {}) {
-  return buildV2Payload({ ...options, includeFiles: false });
+function buildV2EditPayload(draft) {
+  return buildV2Payload(draft);
 }
 
-module.exports = {
-  MAX_TEXT_DISPLAY,
-  truncateV2Text,
-  addTextToContainer,
-  buildV2Container,
-  buildV2Payload,
-  buildV2EditPayload,
-};
+module.exports = { buildV2FromDraft, buildV2Payload, buildV2EditPayload, addText };

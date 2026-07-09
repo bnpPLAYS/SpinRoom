@@ -1,17 +1,15 @@
 {
-  "name": "spinroom-bot",
+  "name": "embedforge-bot",
   "version": "1.0.0",
-  "description": "SpinRoom — advanced group decision wheel Discord bot (Components V2)",
+  "description": "Discord embed builder — normal embeds and Components V2 with a visual panel",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "verify": "node scripts/verify.js"
   },
-  "keywords": ["discord", "bot", "wheel", "spinroom"],
   "license": "MIT",
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.67",
     "discord.js": "^14.26.4",
     "dotenv": "^16.5.0"
   }

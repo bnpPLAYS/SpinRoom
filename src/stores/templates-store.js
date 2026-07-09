@@ -2,42 +2,63 @@ const { createJsonStore } = require("../utils/json-store");
 
 const store = createJsonStore("templates.json", {});
 
-function getGuildTemplates(guildId) {
+function listTemplates(guildId, userId) {
   const all = store.load();
-  return all[guildId] ?? {};
+  const guild = all[guildId] ?? {};
+  const personal = all[`user:${userId}`] ?? {};
+  return { guild: Object.values(guild), personal: Object.values(personal) };
 }
 
-function saveGuildTemplate(guildId, name, template) {
+function saveTemplate({ guildId, userId, name, draft, scope = "guild" }) {
   const all = store.load();
-  if (!all[guildId]) all[guildId] = {};
-  all[guildId][name.toLowerCase()] = {
-    ...template,
+  const key = scope === "personal" ? `user:${userId}` : guildId;
+  if (!all[key]) all[key] = {};
+
+  all[key][name.toLowerCase()] = {
     name,
-    updatedAt: Date.now(),
+    type: draft.type,
+    title: draft.title,
+    description: draft.description,
+    color: draft.color,
+    accentColor: draft.accentColor,
+    url: draft.url,
+    thumbnail: draft.thumbnail,
+    image: draft.image,
+    footer: draft.footer,
+    fields: draft.fields,
+    sections: draft.sections,
+    imageUrls: draft.imageUrls,
+    linkButtons: draft.linkButtons,
+    savedAt: Date.now(),
+    savedBy: userId,
   };
   store.save(all);
-  return all[guildId][name.toLowerCase()];
+  return all[key][name.toLowerCase()];
 }
 
-function getGuildTemplate(guildId, name) {
-  return getGuildTemplates(guildId)[name.toLowerCase()] ?? null;
-}
-
-function listGuildTemplates(guildId) {
-  return Object.values(getGuildTemplates(guildId));
-}
-
-function deleteGuildTemplate(guildId, name) {
+function getTemplate(guildId, userId, name, scope = "guild") {
   const all = store.load();
-  if (!all[guildId]) return false;
-  delete all[guildId][name.toLowerCase()];
-  store.save(all);
-  return true;
+  const key = scope === "personal" ? `user:${userId}` : guildId;
+  return all[key]?.[name.toLowerCase()] ?? null;
 }
 
-module.exports = {
-  getGuildTemplate,
-  saveGuildTemplate,
-  listGuildTemplates,
-  deleteGuildTemplate,
-};
+function applyTemplateToDraft(draft, template) {
+  Object.assign(draft, {
+    type: template.type ?? draft.type,
+    title: template.title ?? "",
+    description: template.description ?? "",
+    color: template.color ?? draft.color,
+    accentColor: template.accentColor ?? template.color ?? draft.accentColor,
+    url: template.url ?? "",
+    thumbnail: template.thumbnail ?? "",
+    image: template.image ?? "",
+    footer: template.footer ?? "",
+    fields: structuredClone(template.fields ?? []),
+    sections: structuredClone(template.sections ?? []),
+    imageUrls: structuredClone(template.imageUrls ?? []),
+    linkButtons: structuredClone(template.linkButtons ?? []),
+  });
+  return draft;
+}
+
+module.exports = { listTemplates, saveTemplate, getTemplate, applyTemplateToDraft };

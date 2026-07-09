@@ -1,12 +1,10 @@
 const processed = new Map();
-const { PANEL_DEDUPE_TTL_MS } = require("./constants");
+const TTL_MS = 5 * 60 * 1000;
 
 function prune() {
   const now = Date.now();
-  for (const [key, timestamp] of processed.entries()) {
-    if (now - timestamp > PANEL_DEDUPE_TTL_MS) {
-      processed.delete(key);
-    }
+  for (const [key, ts] of processed.entries()) {
+    if (now - ts > TTL_MS) processed.delete(key);
   }
 }
 

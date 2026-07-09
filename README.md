@@ -1,52 +1,55 @@
-# SpinRoom Discord Bot
+# EmbedForge (in SpinRoom repo) — visual embed builder for Discord
 
-Advanced group decision wheel bot built entirely with **Discord Components V2** (Containers, Sections, Media Galleries).
+Build **normal embeds** and **Components V2** messages in Discord with buttons and modals.
 
-## Features
-
-- **7 game modes:** Classic, Elimination, Bracket, Team Split, Dare Wheel, Roulette, Ban Round
-- **8 themes** with dynamic accent colors
-- **Canvas wheel images** rendered on spin
-- **Room codes** — share wheels with `/join SPIN-XXXX`
-- **Templates** — built-in presets + save/load custom templates
-- **Import/Export** — JSON wheel sharing
-- **Stats & audit log** — server analytics and optional winner channel
-- **Guild settings** — role gates, cooldowns, defaults
-
-## Setup
-
-1. Create a new app at [Discord Developer Portal](https://discord.com/developers/applications)
-2. Copy **Bot Token** and **Application ID** (Client ID)
-3. Copy `.env.example` to `.env` and fill in values
-4. Invite bot with `bot` + `applications.commands` scopes
-
-```bash
-npm install
-npm start
-```
-
-For faster slash command updates during development, set `GUILD_ID` in `.env`.
+> This repo is named **SpinRoom** on GitHub/VPS for convenience — the bot is now **EmbedForge**.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/spin` | Create a wheel panel |
-| `/join` | Open a wheel by room code |
-| `/template` | Save, load, list, delete templates |
-| `/stats` | Server or user statistics |
-| `/settings` | Guild configuration |
-| `/export` | Export wheel as JSON |
-| `/import` | Import wheel from JSON |
+| `/embed create` | Open the visual builder panel |
+| `/embed quick` | One-shot title + description embed |
+| `/embed template` | Load a saved template |
+| `/embed templates` | List guild + personal templates |
+| `/embed convert` | Convert draft between normal ↔ V2 |
 | `/ping` | Health check |
 
-## Deploy (24/7)
+## Builder panel
+
+- **Title & Description** — modal editor
+- **Color** — hex or named colors (`blurple`, `green`, `red`)
+- **Images** — thumbnail, main image, V2 gallery URLs
+- **Footer**
+- **Add Field** — normal embed fields
+- **Add V2 Section** — section + optional thumbnail
+- **Link Button** — URL buttons (up to 25)
+- **Toggle type** — switch normal ↔ Components V2
+- **Preview** — ephemeral preview before sending
+- **Send** — post to channel
+- **Save Template** — guild or personal scope
+- **Clear** — reset draft
+
+## Setup
 
 ```bash
-pm2 start src/index.js --name spinroom-bot
-pm2 save
+npm install
+copy .env.example .env
+# Add DISCORD_TOKEN and CLIENT_ID
+npm start
 ```
 
-## Project structure
+Optional: `GUILD_ID` for instant slash command updates during development.
 
-See plan for full architecture. Core V2 builders live in `src/spinroom-components.js` and `src/v2-message.js`.
+## Invite permissions
+
+Scopes: `bot`, `applications.commands`
+
+Permissions: Send Messages, Embed Links, Attach Files, Use Slash Commands
+
+## Deploy 24/7
+
+```bash
+pm2 start src/index.js --name embedforge
+pm2 save
+```
